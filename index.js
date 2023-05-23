@@ -3,13 +3,26 @@ import express from "express";
 const app = express();
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
-
+import session from "express-session";
 const db = await open({
     driver: sqlite3.Database,
     filename: "database.sqlite"
 })
 
+app.use(session({
+    secret: "some secret",
+    cookie: { maxAge: 30000 },
+    saveUninitialized: true,
+    resave: false
+}));
 
+function auth(req, res, next) {
+    if (!req.session.username) {
+        res.redirect('/signin');
+        return;
+    }
+    next();
+}
 
 app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
@@ -25,6 +38,7 @@ app.post('/signup', async (req, res) => {
     const data = req.body;
     if (await checkUserExistens(data)) {
         res.render('signup', { error: "Username already exists" })
+        return;
     }
     const hash = await bcrypt.hash(data.password, 10);
     await db.run("INSERT INTO users (username, password) VALUES (?,?)", data.username, hash);
@@ -41,12 +55,15 @@ app.post('/signin', async (req, res) => {
         res.render('signin', { username: data.username, error: "Username or Password is wrong" });
         return;
     }
-    res.redirect('/app');
+    req.session.regenerate(() => {
+        req.session.username = data.username;
+        req.session.save(() => { res.redirect('/app'); });
+    });
 });
 
 //the to-do-list 
-app.get('/app', (req, res) => {
-    res.send('Hello World');
+app.get('/app', auth, (req, res) => {
+    res.render('app', { username: req.session.username });
 });
 
 app.listen('3000');
