@@ -9,7 +9,24 @@
 </head>
 
 <body>
-    <%= username %>
+    <form action="/app" method="post">
+        <input type="text" name="title" id="title" placeholder="Title">
+        <input type="text" name="description" id="description" placeholder="Description">
+        <button type="submit">Add</button>
+    </form>
+
+    <% for(let i=0; i < todos.length; i++){%>
+        <p>
+            <%= todos[i].title%>
+        </p>
+        <p>
+            <%= todos[i].description %>
+        </p>
+        <p>
+            <%= new Date(todos[i].time).toLocaleString() %>
+        </p>
+        <% }%>
+
 </body>
 
 </html>

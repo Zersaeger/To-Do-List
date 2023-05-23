@@ -11,7 +11,7 @@ const db = await open({
 
 app.use(session({
     secret: "some secret",
-    cookie: { maxAge: 30000 },
+    cookie: { maxAge: 86400 },
     saveUninitialized: true,
     resave: false
 }));
@@ -62,8 +62,14 @@ app.post('/signin', async (req, res) => {
 });
 
 //the to-do-list 
-app.get('/app', auth, (req, res) => {
-    res.render('app', { username: req.session.username });
+app.get('/app', auth, async (req, res) => {
+    const todos = await db.all("SELECT title, description, time FROM todos WHERE username = ? ORDER BY time DESC", req.session.username);
+    res.render('app', { todos: todos });
+});
+app.post('/app', auth, async (req, res) => {
+    const data = req.body;
+    await db.run('INSERT INTO todos (title, description, time, username) VALUES (?,?,?,?)', data.title, data.description, new Date(), req.session.username);
+    res.redirect('/app');
 });
 
 app.listen('3000');
