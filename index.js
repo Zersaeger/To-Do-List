@@ -4,6 +4,9 @@ const app = express();
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import session from "express-session";
+import connectsqlite from "connect-sqlite3";
+const Store = connectsqlite(session);
+
 const db = await open({
     driver: sqlite3.Database,
     filename: "database.sqlite"
@@ -13,7 +16,8 @@ app.use(session({
     secret: "some secret",
     cookie: { maxAge: 86400 },
     saveUninitialized: true,
-    resave: false
+    resave: false,
+    store: new Store({ table: "sessions", db: "database.sqlite" })
 }));
 
 function auth(req, res, next) {
